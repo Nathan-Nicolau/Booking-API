@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: ct_postgres_hotel
+    restart: always
+    environment:
+      POSTGRES_USER: masteradmin
+      POSTGRES_PASSWORD: masterkey@hotel123
+      POSTGRES_DB: HOTELDB
+    ports:
+      - "5433:5432"
+    volumes:
+      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
