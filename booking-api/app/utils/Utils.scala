@@ -1,38 +1,38 @@
 package utils
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object Utils {
 
-  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  private val formatterDataHora = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  private val formatterData = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   def converterDataHoraString(data: LocalDateTime): String = {
-    val dataReturn = Try(formatter.format(data)) match {
-      case Success(value) => value.toString()
-      case Failure(exception) => LocalDateTime.now().format(formatter)
-     }
-    return dataReturn
-
+    Try(formatterDataHora.format(data)) match {
+      case Success(value) => value
+      case Failure(_) => LocalDateTime.now().format(formatterDataHora)
+    }
   }
 
-  def converterStringParaDataHora(dataString: String): LocalDateTime = { 
-    val localDateTimeReturn = Try(LocalDateTime.from(formatter.parse(dataString))) match {
+  def converterStringParaDataHora(dataString: String): LocalDateTime = {
+    val tentativaDataHora = Try(LocalDateTime.parse(dataString, formatterDataHora))
+    tentativaDataHora match {
       case Success(value) => value
-      case Failure(exception) => LocalDateTime.now()
+      case Failure(_) =>
+        Try(LocalDate.parse(dataString, formatterData).atStartOfDay()) match {
+          case Success(value) => value
+          case Failure(_) => LocalDateTime.now()
+        }
     }
-    return localDateTimeReturn;
   }
 
   def getDataHoraStringFormatada(data: LocalDateTime): String = {
-    val dataFormatada = Try(data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
-    return dataFormatada match {
+    Try(data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))) match {
       case Success(value) => value
-      case Failure(exception) => LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+      case Failure(_) => LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
     }
   }
 

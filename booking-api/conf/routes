@@ -10,10 +10,10 @@ GET     /assets/*file     controllers.Assets.versioned(path="/public", file: Ass
 
 # Map static resources from the /public folder to the /assets URL path
 
-GET     /quartos                        controllers.ReservaController.getTodosQuartos
-GET     /quartos-disponiveis            controllers.ReservaController.getQuartosDisponiveis
-POST    /adicionar-quarto-inventario    controllers.ReservaController.adicionarQuartoInventario
-PUT     /remover-quarto-inventario      controllers.ReservaController.removerQuartoInventario(id: Int)
-PUT     /retornar-quarto-inventario     controllers.ReservaController.retornarQuartoAoInventario(id: Int)
-GET     /get-reservas-periodo           controllers.ReservaController.getReservasPeriodo
-POST    /criar-nova-reserva             controllers.ReservaController.criarNovaReserva
+GET     /quartos                                  controllers.ReservaController.getTodosQuartos
+GET     /quartos-disponiveis                      controllers.ReservaController.getQuartosDisponiveis
+POST    /adicionar-quarto-inventario              controllers.ReservaController.adicionarQuartoInventario
+PUT     /remover-quarto-inventario/:idQuarto      controllers.ReservaController.removerQuartoInventario(idQuarto: Int)
+PUT     /retornar-quarto-inventario/:idQuarto     controllers.ReservaController.retornarQuartoAoInventario(idQuarto: Int)
+GET     /reservas-periodo                         controllers.ReservaController.getReservasPeriodo
+POST    /criar-nova-reserva                       controllers.ReservaController.criarNovaReserva

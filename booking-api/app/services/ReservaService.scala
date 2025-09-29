@@ -75,8 +75,8 @@ class ReservaService @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
       .update("OK")
 
     val retornoUdate = Try(db.run(quartoParaRetorno))
-    val retorno = retornoUdate match { 
-      case Success(value) => Retorno(true,"Quarto retornoad ao inventário com sucesso")
+    val retorno = retornoUdate match {
+      case Success(value) => Retorno(true,"Quarto retornado ao inventário com sucesso")
       case Failure(exception) => Retorno(false,s"Erro ao retornar quarto ao inventário: ${exception.getMessage()}")
     }
 
@@ -107,57 +107,93 @@ class ReservaService @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   def criarNovaReserva(novaReserva: NovaReservaQuartoDTO): Future[RetornoNovaReservaDTO] = {
 
   val dataInicioInformada = novaReserva.getDataInicioReservadaAjustada()
+  val dataFimInformada = novaReserva.getDataFimReservaAjustada()
 
-  val queryQuarto = Quartos.tabela.filter(_.idQuarto === novaReserva.getIdQuarto()).result.headOption
+  val queryQuarto = Quartos.tabela
+    .filter(_.idQuarto === novaReserva.getIdQuarto())
+    .result
+    .headOption
+
+  val queryReservasQuarto = ReservasQuarto.tabela.filter { reserva =>
+    (reserva.idQuarto === novaReserva.getIdQuarto()) &&
+    (reserva.dataInicioReserva < dataFimInformada) &&
+    (reserva.dataFimReserva > dataInicioInformada)
+  }.result
 
   db.run(queryQuarto).flatMap {
     case Some(quarto) =>
-      if (dataInicioInformada.isBefore(quarto.dataDisponibilidadeReserva) || dataInicioInformada.isEqual(quarto.dataDisponibilidadeReserva)) {
+      if (dataInicioInformada.isBefore(quarto.dataDisponibilidadeReserva) ||
+          dataInicioInformada.isEqual(quarto.dataDisponibilidadeReserva)) {
         Future.successful(
           RetornoNovaReservaDTO(
             reservadoComSucesso = false,
-            mensagem = "Erro ao criar uma nova reserva",
+            mensagem = s"Data de reserva é inválida! Só há disponibilidade para: ${Utils.getDataHoraStringFormatada(quarto.dataDisponibilidadeReserva)}",
             dataFimReserva = ""
           )
         )
       } else {
-        val novaReservaData = ReservaQuarto(
-          idQuarto = novaReserva.getIdQuarto(),
-          idHospede = novaReserva.getIdHospede(),
-          dataInicioReserva = dataInicioInformada,
-          dataFimReserva = novaReserva.getDataFimReservaAjustada()
-        )
+        db.run(queryReservasQuarto).flatMap { reservasExistentes =>
+          if (reservasExistentes.nonEmpty) {
+            Future.successful(
+              RetornoNovaReservaDTO(
+                reservadoComSucesso = false,
+                mensagem = "Já existe uma reserva para esse quarto nesse período.",
+                dataFimReserva = ""
+              )
+            )
+          } else {
+            val insertAction =
+              ReservasQuarto.tabela
+                .map(r => (r.idQuarto, r.idHospede, r.dataInicioReserva, r.dataFimReserva))
+                .returning(ReservasQuarto.tabela.map(_.numeroReserva))
+                .into { case ((idQ, idH, di, df), numGerado) =>
+                  ReservaQuarto(None, idQ, idH, Some(numGerado), di, df)
+                }
 
-        val insertAction = ReservasQuarto.tabela.insertOrUpdate(novaReservaData)
+            db.run(insertAction += (novaReserva.getIdQuarto(), novaReserva.getIdHospede(), dataInicioInformada, dataFimInformada)).flatMap { reservaCriada =>
+              val updateAction = Quartos.tabela
+                .filter(_.idQuarto === novaReserva.getIdQuarto())
+                .map((quartoAtualizacao) => (quartoAtualizacao.dataDisponibilidadeReserva, quartoAtualizacao.statusOcupacao))
+                .update(calcularDataDisponibilidade(dataFimInformada), true)
 
-        db.run(insertAction).flatMap { _ =>
-          val updateAction = Quartos.tabela
-            .filter(_.idQuarto === novaReserva.getIdQuarto())
-            .map(_.dataDisponibilidadeReserva)
-            .update(calcularDataDisponibilidade(novaReserva.getDataFimReservaAjustada()))
-
-          db.run(updateAction).map { _ =>
-            RetornoNovaReservaDTO(novaReservaData.numeroReserva,true,"Reserva criada com sucesso", Utils.getDataHoraStringFormatada(novaReservaData.dataFimReserva))
-          }.recover {
-            case ex: Throwable =>
-              RetornoNovaReservaDTO(novaReservaData.numeroReserva,false,s"Houve um erro ao atualizar o quarto: ${ex.getMessage}",Utils.getDataHoraStringFormatada(novaReservaData.dataFimReserva))
+              db.run(updateAction).map { _ =>
+                RetornoNovaReservaDTO(
+                  reservaCriada.numeroReserva,
+                  reservadoComSucesso = true,
+                  mensagem = "Reserva criada com sucesso",
+                  dataFimReserva = Utils.getDataHoraStringFormatada(reservaCriada.dataFimReserva)
+                )
+              }.recover {
+                case ex: Throwable =>
+                  RetornoNovaReservaDTO(
+                    Option(0),
+                    reservadoComSucesso = false,
+                    mensagem = s"Houve um erro ao atualizar o quarto: ${ex.getMessage}",
+                    dataFimReserva = Utils.getDataHoraStringFormatada(reservaCriada.dataFimReserva)
+                  )
+              }
+            }.recover {
+              case ex: Throwable =>
+                RetornoNovaReservaDTO(
+                  Option(0),
+                  reservadoComSucesso = false,
+                  mensagem = s"Houve um erro ao criar a reserva: ${ex.getMessage}",
+                  dataFimReserva = Utils.getDataHoraStringFormatada(dataFimInformada)
+                )
+            }
           }
-        }.recover {
-          case ex: Throwable =>
-            RetornoNovaReservaDTO(novaReservaData.numeroReserva,false,s"Houve um erro ao criar a reserva: ${ex.getMessage}",Utils.getDataHoraStringFormatada(novaReservaData.dataFimReserva))
         }
       }
 
     case None =>
       Future.successful(
         RetornoNovaReservaDTO(
-            reservadoComSucesso = false,
-            mensagem = "Erro ao criar uma nova reserva",
-            dataFimReserva = ""
-          )
+          reservadoComSucesso = false,
+          mensagem = "Erro ao criar uma nova reserva",
+          dataFimReserva = ""
+        )
       )
+    }
   }
-}
-
 
 }
