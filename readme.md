@@ -16,4 +16,4 @@ A Api foi desenvolvida utilizando:
 
 Os arquivos init.sql e docker-compose estão na pasta - Docker-booking-api
 
-Obs: Eu já possuía um container Docker mapeado na porta 5432, por isso o mapeamento de porta ficou para a 5433
+Obs: Eu já possuía um container Docker do Postgres mapeado na porta 5432, por isso o mapeamento de porta ficou para a 5433
