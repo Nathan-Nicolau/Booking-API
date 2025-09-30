@@ -5,6 +5,8 @@ import slick.lifted.ProvenShape
 import EntidadeReservaQuarto.TabelaReservaQuarto
 import play.api.libs.json._
 
+//O número da reserva é gerada automaticamente, pois na listagem dos dados
+//Não deve ser exibido o ID
 final case class ReservaQuarto(
   idReservaQuarto: Option[Int] = None,
   idQuarto: Int = 0,

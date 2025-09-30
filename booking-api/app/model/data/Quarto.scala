@@ -13,7 +13,6 @@ final case class Quarto(
   numeroQuarto: String = "",
   andar: Int = 0,
   tipo: String = "",
-  statusOcupacao: Boolean = false,
   statusInventario: String = "",
   dataUltimaReserva: LocalDateTime = LocalDateTime.MIN,
   dataDisponibilidadeReserva: LocalDateTime = LocalDateTime.MIN
@@ -29,15 +28,14 @@ object EntidadeQuarto {
     def numeroQuarto = column[String]("numero_quarto")
     def andar = column[Int]("andar")
     def tipo = column[String]("tipo")
-    def statusOcupacao = column[Boolean]("status_ocupacao")
     def statusInventario = column[String]("status_inventario")
     def dataUltimaReserva = column[LocalDateTime]("data_ultima_reserva")
     def dataDisponibilidadeReserva = column[LocalDateTime]("data_disponibilidade_reserva")
 
-    //Para barrar a existência de quartos com mesmo número no mesmo andar
+    //Aqui é para barrar a existência de quartos com mesmo número no mesmo andar, afinal na prática isso não ocorre
     def idxUnicoAndarNumero = index("idx_andar_numero_unico", (andar, numeroQuarto), unique = true)
 
-    override def * = (idQuarto.?,numeroQuarto,andar,tipo,statusOcupacao,statusInventario,dataUltimaReserva,dataDisponibilidadeReserva).mapTo[Quarto]
+    override def * = (idQuarto.?,numeroQuarto,andar,tipo,statusInventario,dataUltimaReserva,dataDisponibilidadeReserva).mapTo[Quarto]
 
    }
 

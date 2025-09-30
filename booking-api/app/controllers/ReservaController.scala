@@ -36,7 +36,7 @@ class ReservaController @Inject()(val cc: ControllerComponents, val reservaServi
     request.body.validate[NovoQuartoInventario].fold(
       errors => Future.successful(BadRequest(Json.obj("error" -> "JSON inválido"))),
       novoQuarto => reservaService.adicionarQuartoInventario(novoQuarto).map { retorno =>
-        Ok(Json.toJson("" -> retorno.mensagem))
+        Ok(Json.toJson(retorno.mensagem))
       }
     )
   }
@@ -44,14 +44,14 @@ class ReservaController @Inject()(val cc: ControllerComponents, val reservaServi
   //PUT remover-quarto-inventario
   def removerQuartoInventario(idQuarto: Int) = Action.async {
     reservaService.removerQuartoInventario(idQuarto).map { retorno =>
-      Ok(Json.toJson("" -> retorno.mensagem))
+      Ok(Json.toJson(retorno.mensagem))
     }
   }
 
   //PUT retornar-quarto-inventario
   def retornarQuartoAoInventario(idQuarto: Int) = Action.async {
-    reservaService.retornarQuartoAoInventário(idQuarto).map { retorno =>
-      Ok(Json.toJson("" -> retorno.mensagem))
+    reservaService.retornarQuartoAoInventario(idQuarto).map { retorno =>
+      Ok(Json.toJson(retorno.mensagem))
     }
   }
 

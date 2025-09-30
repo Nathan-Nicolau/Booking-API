@@ -1,0 +1,14 @@
+A Api foi desenvolvida utilizando:
+
+Scala: 2.13.16
+SBT: 1.11.6
+Play Framework: 3.0.9 
+Slick: 5.2.0
+Postgres: 15
+
+É possível:
+- Consultar o inventário dos quartos existentes
+- Adicionar novos quartos ao inventário
+- Remover quarto do inventário (somente torna ela não acessível para reserva)
+- Adicionar nova reserva
+- Consultar reservas de um determinado período
